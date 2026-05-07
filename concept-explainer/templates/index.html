@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>概念解释器 — 编程与 AI 知识助手</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <!-- 头部 -->
+    <header class="header">
+        <div class="container header-inner">
+            <div class="header-left">
+                <h1 class="logo">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M9.5 12l1.5 1.5 3.5-4"/>
+                        <line x1="12" y1="8" x2="12" y2="16"/>
+                    </svg>
+                    概念解释器
+                </h1>
+                <p class="subtitle">输入任何编程或 AI 概念，AI 为你生成结构化解释</p>
+            </div>
+            <button class="btn-kb-toggle" id="kbToggle" title="知识库">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
+                    <line x1="8" y1="7" x2="16" y2="7"/>
+                    <line x1="8" y1="10.5" x2="14" y2="10.5"/>
+                </svg>
+                <span>知识库</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 主布局 -->
+    <div class="app-layout">
+        <!-- 对话区域 -->
+        <main class="main-content" id="mainContent">
+            <div class="container">
+                <div class="chat-area" id="chatArea">
+                    <!-- 空状态建议 -->
+                    <div class="welcome" id="welcome">
+                        <div class="welcome-icon">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M8 12l3 3 5-5"/>
+                            </svg>
+                        </div>
+                        <p class="welcome-title">想了解什么概念？</p>
+                        <p class="welcome-hint">支持编程、AI 领域的任何概念，AI 会从四个维度为你详细解释</p>
+                        <div class="suggestion-groups">
+                            <div class="suggestion-group">
+                                <p class="group-label">编程概念</p>
+                                <div class="suggestion-chips">
+                                    <button class="chip">闭包 (Closure)</button>
+                                    <button class="chip">RESTful API</button>
+                                    <button class="chip">异步编程 (Async)</button>
+                                    <button class="chip">递归 (Recursion)</button>
+                                    <button class="chip">Docker 容器</button>
+                                    <button class="chip">MVC 架构</button>
+                                </div>
+                            </div>
+                            <div class="suggestion-group">
+                                <p class="group-label">AI 概念与工具</p>
+                                <div class="suggestion-chips">
+                                    <button class="chip">大模型 (LLM)</button>
+                                    <button class="chip">RAG 检索增强生成</button>
+                                    <button class="chip">AI Agent</button>
+                                    <button class="chip">MCP 协议</button>
+                                    <button class="chip">Claude Code</button>
+                                    <button class="chip">提示工程 (Prompt)</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 消息列表 -->
+                    <div class="messages" id="messages"></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 知识库侧边栏 -->
+        <aside class="kb-sidebar" id="kbSidebar">
+            <div class="kb-header">
+                <h2>知识库</h2>
+                <button class="kb-close" id="kbClose">&times;</button>
+            </div>
+            <div class="kb-tabs">
+                <button class="kb-tab active" data-tab="personal">个人知识库</button>
+                <button class="kb-tab" data-tab="network">网络知识库</button>
+            </div>
+            <!-- 个人知识库 -->
+            <div class="kb-tab-content active" id="tabPersonal">
+                <div class="kb-stats" id="kbStats"></div>
+                <div class="kb-filter">
+                    <button class="kb-filter-btn active" data-cat="">全部</button>
+                    <button class="kb-filter-btn" data-cat="AI编程">AI编程</button>
+                    <button class="kb-filter-btn" data-cat="编程基础知识">编程基础</button>
+                </div>
+                <div class="kb-list" id="kbList">
+                    <p class="kb-empty">暂无记录，搜索问题后自动添加</p>
+                </div>
+            </div>
+            <!-- 网络知识库（占位） -->
+            <div class="kb-tab-content" id="tabNetwork">
+                <div class="kb-placeholder">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="2" y1="12" x2="22" y2="12"/>
+                        <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
+                    </svg>
+                    <p>网络知识库功能即将上线</p>
+                    <span>敬请期待...</span>
+                </div>
+            </div>
+        </aside>
+        <!-- 侧边栏遮罩 -->
+        <div class="kb-overlay" id="kbOverlay"></div>
+    </div>
+
+    <!-- 输入区域 -->
+    <footer class="input-bar">
+        <div class="container input-container">
+            <textarea
+                id="conceptInput"
+                placeholder="输入你想了解的概念，例如：什么是闭包？MCP 怎么用？"
+                rows="1"
+                maxlength="500"
+            ></textarea>
+            <button class="btn btn-send" id="sendBtn" title="发送">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13"/>
+                    <polygon points="22,2 15,22 11,13 2,9"/>
+                </svg>
+            </button>
+        </div>
+    </footer>
+
+    <!-- 加载指示器 -->
+    <div class="loading-toast" id="loadingToast" style="display:none">
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+        <span>AI 思考中...</span>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

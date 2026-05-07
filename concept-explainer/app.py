@@ -16,57 +16,44 @@ app = Flask(__name__)
 
 BASE_DIR = Path(__file__).parent
 KNOWLEDGE_FILE = BASE_DIR / 'knowledge.json'
+CATEGORIES_FILE = BASE_DIR / 'categories.json'
+
+DEFAULT_CATEGORIES = ['AI编程', '编程基础知识']
 
 # ======== System Prompt ========
-SYSTEM_PROMPT = """你是一个编程与 AI 概念解释专家，专门帮助初学者理解复杂的技术概念。
+SYSTEM_PROMPT = """你是一个编程与 AI 概念解释专家，用户是正在学习的初学者。你的回答需要通俗易懂、偏实战、善于用类比。
 
-# 最重要的规则：诚实面对未知
+# 最重要规则
 
-如果用户提问的概念你不认识、也完全没有网络资料可供参考——请直接回复 `UNKNOWN`（只回复这一个词）。宁可说不认识，也不要猜测或编造。
+如果用户提问的概念你不认识、也完全没有网络资料可供参考——直接回复 `UNKNOWN`，不要编造。
 
-# 回答规则
+# 回答结构（按以下顺序组织，自然分段，不用"## 标题"）
 
-用户提问时会附带概念类型标记和网络搜索资料。请根据提供的网络资料 + 自身知识生成回答：
+**一句话总结** — 回答第一句用 **加粗** 一句话讲清这个概念是什么，让用户立刻有印象。
 
-- 如果网络资料充足：以网络资料为主要依据，用自身知识辅助解释
-- 如果网络资料与你所知一致：用资料丰富细节，互相印证
-- 如果网络资料较少但有自身知识：以自身知识为主，网络资料为补充
-- 完全没有任何可用信息时：回复 `UNKNOWN`
+**含义 + 类比** — 用大白话解释这个概念，配合一个生活中的类比帮助理解。如果概念有英文全称，附上。
 
-请根据概念类型标记选择对应的第四部分结构：
+**特点 + 对比** — 列出 2-4 个核心特点。对比相似概念（如果有的话），说明它们之间的区别和各自适用场景，帮用户建立知识网络。
 
-**编程概念**（用户消息包含[编程概念]标记）：
-## 是什么
-用通俗易懂的语言解释这个概念的来源、核心思想和定义。用日常生活的比喻帮助理解，让零基础的人也能听懂。技术术语附英文原名。
+**怎么用** — 这是重点部分，要详细。请从 GitHub 开源项目、X（Twitter）开发者、B站技术博主、官方文档中搜集该概念的常见用法，优先介绍 AI 教学领域博主讲解过的高频用法。每种用法后面用 ⭐ 标注使用频率（5级：⭐⭐⭐⭐⭐ 极高频~⭐ 极少用），按频率从高到低排列。格式如：
+    ⭐⭐⭐⭐⭐ 最常用的用法：xxxx
+    ⭐⭐⭐⭐ 次高频用法：xxxx
+    ⭐⭐⭐ 偶尔使用：xxxx
 
-## 有什么用
-说明这个概念能解决什么问题，在哪些实际开发场景中会用到，为什么它很重要。
+**常见误区** — 指出初学者容易理解错的地方、容易混淆的点、常见的错误用法。让用户少踩坑。
 
-## 怎么用
-说明如何正确地应用这个概念。包含使用步骤、注意要点、常见误区和最佳实践。
+**实战示例** — 编程概念给出可直接运行的 Python 代码（或用户指定的语言），代码带注释。AI 概念给出具体的操作流程或配置示例。如果概念不适合代码，用步骤描述替代。
 
-## 代码示例
-给出 1-2 个具体可运行的代码示例，用注释详细说明每一行关键代码的作用。选择用户提问中提到的语言，未指定则使用 Python。
-
-**AI 概念**（用户消息包含[AI概念]标记）：
-## 是什么
-用通俗易懂的语言解释这个概念的来源、核心思想和定义。用日常生活的比喻帮助理解。技术术语附英文原名。
-
-## 有什么用
-说明这个概念能解决什么问题，在 AI 工作流或工具链中处于什么位置。
-
-## 怎么用
-说明如何正确地应用这个概念。包含使用步骤、注意要点、常见误区。
-
-## 实际应用
-用 1-2 个具体的实际场景说明这个概念在真实项目或产品中是如何落地的。用自然语言描述清楚即可。
+**学习建议** — 1-2 句话告诉用户：这个概念适合在什么项目里实践？掌握之后下一步学什么相关概念？
 
 # 语言风格
 
-- 全部使用中文回答
-- 语气轻松友好，像学长给学弟学妹讲解
-- 每个部分都要有实质性内容
-- 总长度控制在 600-2000 字之间"""
+- 全部中文，轻松直接，像学长当面讲解
+- 精简务实，每个字都要有信息量，不写废话
+- 代码和步骤优先于理论解释
+- 如果有网络资料，以网络资料为准
+- 总长度 500-1200 字"""
+
 
 
 def search_web(query: str) -> str:
@@ -151,10 +138,11 @@ def save_knowledge(entries: list):
     )
 
 
-def add_to_knowledge(concept: str) -> dict:
+def add_to_knowledge(concept: str, category: str = '') -> dict:
     """添加一条记录到知识库，返回该条目"""
     entries = load_knowledge()
-    category = classify_concept(concept)
+    if not category:
+        category = classify_concept(concept)
     entry = {
         'id': str(uuid.uuid4())[:8],
         'concept': concept,
@@ -167,6 +155,25 @@ def add_to_knowledge(concept: str) -> dict:
         entries = entries[:200]
     save_knowledge(entries)
     return entry
+
+
+# ======== 分类管理 ========
+def load_categories() -> list:
+    """加载自定义分类列表"""
+    if CATEGORIES_FILE.exists():
+        try:
+            cats = json.loads(CATEGORIES_FILE.read_text(encoding='utf-8'))
+            if isinstance(cats, list) and len(cats) > 0:
+                return cats
+        except (json.JSONDecodeError, OSError):
+            pass
+    return DEFAULT_CATEGORIES.copy()
+
+
+def save_categories(cats: list):
+    CATEGORIES_FILE.write_text(
+        json.dumps(cats, ensure_ascii=False, indent=2), encoding='utf-8'
+    )
 
 
 # ======== API Key ========
@@ -221,13 +228,16 @@ def index():
 @app.route('/api/chat', methods=['POST'])
 def chat():
     data = request.get_json()
-    if not data or not data.get('concept', '').strip():
+    if not data:
         return jsonify({'success': False, 'error': '请输入一个概念'}), 400
 
-    concept = normalize_concept(data['concept'])
+    concept = normalize_concept(data.get('concept', ''))
+    if not concept:
+        return jsonify({'success': False, 'error': '请输入一个概念'}), 400
     if len(concept) > 500:
         return jsonify({'success': False, 'error': '输入过长，请控制在500字以内'}), 400
 
+    user_category = data.get('category', '')
     history = data.get('history', [])
 
     if not DEEPSEEK_API_KEY:
@@ -240,8 +250,9 @@ def chat():
     category = classify_concept(concept)
     tag = '[AI概念]' if category == 'AI编程' else '[编程概念]'
 
-    # 先搜索网络
-    search_results = search_web(concept)
+    # 先搜索网络（附加教程/用法关键词，覆盖教育博主来源）
+    search_query = f'{concept} 教程 用法 GitHub B站 官方文档'
+    search_results = search_web(search_query)
 
     # 构建消息：搜索结果始终作为上下文
     messages = [{'role': 'system', 'content': SYSTEM_PROMPT}]
@@ -268,8 +279,8 @@ def chat():
                 'error': f'抱歉，未找到关于"{concept}"的相关知识。',
             }), 404
 
-        # 添加到知识库
-        kb_entry = add_to_knowledge(concept)
+        # 添加到知识库（使用用户选择的分类）
+        kb_entry = add_to_knowledge(concept, user_category)
 
         return jsonify({
             'success': True,
@@ -287,6 +298,77 @@ def chat():
         return jsonify({'success': False, 'error': 'AI 响应超时，请重试'}), 504
     except requests.RequestException as e:
         return jsonify({'success': False, 'error': f'API 请求失败：{str(e)}'}), 500
+
+
+# ======== 划词快速解释 ========
+QUICK_PROMPT = """用一句话（30字以内）解释用户选中的词，通俗易懂。只输出解释本身，不要任何前缀后缀。"""
+
+
+@app.route('/api/quick-explain', methods=['POST'])
+def quick_explain():
+    data = request.get_json()
+    word = normalize_concept(data.get('word', ''))
+    if not word or len(word) > 100:
+        return jsonify({'success': False}), 400
+
+    if not DEEPSEEK_API_KEY:
+        return jsonify({'success': False}), 500
+
+    try:
+        resp = requests.post(
+            DEEPSEEK_URL,
+            headers={
+                'Authorization': f'Bearer {DEEPSEEK_API_KEY}',
+                'Content-Type': 'application/json',
+            },
+            json={
+                'model': 'deepseek-chat',
+                'messages': [
+                    {'role': 'system', 'content': QUICK_PROMPT},
+                    {'role': 'user', 'content': word},
+                ],
+                'temperature': 0.3,
+                'max_tokens': 80,
+            },
+            timeout=15,
+        )
+        resp.raise_for_status()
+        content = resp.json()['choices'][0]['message']['content'].strip()
+        return jsonify({'success': True, 'explanation': content})
+    except Exception:
+        return jsonify({'success': False}), 500
+
+
+# ======== 分类 API ========
+@app.route('/api/categories', methods=['GET'])
+def get_categories():
+    return jsonify({'success': True, 'categories': load_categories()})
+
+
+@app.route('/api/categories', methods=['POST'])
+def add_category():
+    data = request.get_json()
+    name = (data.get('name') or '').strip()
+    if not name or len(name) > 20:
+        return jsonify({'success': False, 'error': '分类名不能为空且不超过20字符'}), 400
+    cats = load_categories()
+    if name in cats:
+        return jsonify({'success': False, 'error': '分类已存在'}), 409
+    cats.append(name)
+    save_categories(cats)
+    return jsonify({'success': True, 'categories': cats})
+
+
+@app.route('/api/categories/<name>', methods=['DELETE'])
+def delete_category(name):
+    cats = load_categories()
+    if name not in cats:
+        return jsonify({'success': False, 'error': '分类不存在'}), 404
+    if len(cats) <= 1:
+        return jsonify({'success': False, 'error': '至少保留一个分类'}), 400
+    cats.remove(name)
+    save_categories(cats)
+    return jsonify({'success': True, 'categories': cats})
 
 
 # ======== 知识库 API ========

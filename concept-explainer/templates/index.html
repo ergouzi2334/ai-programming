@@ -95,13 +95,19 @@
             <!-- 个人知识库 -->
             <div class="kb-tab-content active" id="tabPersonal">
                 <div class="kb-stats" id="kbStats"></div>
-                <div class="kb-filter">
+                <div class="kb-filter" id="kbFilter">
                     <button class="kb-filter-btn active" data-cat="">全部</button>
-                    <button class="kb-filter-btn" data-cat="AI编程">AI编程</button>
-                    <button class="kb-filter-btn" data-cat="编程基础知识">编程基础</button>
                 </div>
                 <div class="kb-list" id="kbList">
                     <p class="kb-empty">暂无记录，搜索问题后自动添加</p>
+                </div>
+                <div class="kb-cat-mgr">
+                    <p class="kb-cat-mgr-title">管理分类</p>
+                    <div class="kb-cat-mgr-list" id="kbCatMgrList"></div>
+                    <div class="kb-cat-mgr-add">
+                        <input type="text" id="kbCatInput" placeholder="新分类名称" maxlength="20">
+                        <button class="btn btn-small btn-primary" id="kbCatAddBtn">添加</button>
+                    </div>
                 </div>
             </div>
             <!-- 网络知识库（占位） -->
@@ -124,6 +130,10 @@
     <!-- 输入区域 -->
     <footer class="input-bar">
         <div class="container input-container">
+            <div class="default-cat" id="defaultCat">
+                <span class="default-cat-label">保存到</span>
+                <select class="default-cat-select" id="defaultCatSelect"></select>
+            </div>
             <textarea
                 id="conceptInput"
                 placeholder="输入你想了解的概念，例如：什么是闭包？MCP 怎么用？"
@@ -143,6 +153,27 @@
     <div class="loading-toast" id="loadingToast" style="display:none">
         <div class="typing-dots"><span></span><span></span><span></span></div>
         <span>AI 思考中...</span>
+    </div>
+
+    <!-- 分类选择弹窗 -->
+    <div class="cat-modal-overlay" id="catModalOverlay" style="display:none">
+        <div class="cat-modal">
+            <p class="cat-modal-title">选择分类</p>
+            <p class="cat-modal-concept" id="catModalConcept"></p>
+            <div class="cat-modal-list" id="catModalList"></div>
+            <div class="cat-modal-new" id="catModalNew">
+                <input type="text" id="catNewInput" placeholder="输入新分类名称" maxlength="20">
+                <button class="btn btn-small btn-outline" id="catNewAddBtn">添加</button>
+            </div>
+            <div class="cat-modal-actions">
+                <button class="btn btn-outline" id="catCancelBtn">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 划词解释气泡 -->
+    <div class="word-popup" id="wordPopup" style="display:none">
+        <div class="word-popup-text" id="wordPopupText"></div>
     </div>
 
     <script src="/static/js/main.js"></script>

@@ -171,9 +171,20 @@
         </div>
     </div>
 
-    <!-- 划词解释气泡 -->
+    <!-- 划词解释弹窗 -->
     <div class="word-popup" id="wordPopup" style="display:none">
-        <div class="word-popup-text" id="wordPopupText"></div>
+        <div class="wp-header">
+            <span class="wp-word" id="wpWord"></span>
+            <button class="wp-close" id="wpClose">&times;</button>
+        </div>
+        <div class="wp-body" id="wpBody"></div>
+        <div class="wp-actions">
+            <button class="wp-followup-btn" id="wpFollowupBtn">追问</button>
+        </div>
+        <div class="wp-input-row" id="wpInputRow" style="display:none">
+            <input type="text" class="wp-input" id="wpInput" placeholder="针对这个词追问..." maxlength="200">
+            <button class="wp-send-btn" id="wpSendBtn">发送</button>
+        </div>
     </div>
 
     <script src="/static/js/main.js"></script>

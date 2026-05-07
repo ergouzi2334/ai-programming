@@ -432,23 +432,86 @@ body {
     margin-bottom: 10px;
 }
 
-/* ========== 划词解释气泡 ========== */
+/* ========== 划词解释弹窗 ========== */
 .word-popup {
     position: fixed; z-index: 500;
-    background: var(--green-700); color: #fff;
-    padding: 8px 14px; border-radius: var(--radius-sm);
-    font-size: .82rem; line-height: 1.5; max-width: 280px;
-    box-shadow: 0 6px 20px rgba(0,0,0,.25);
-    pointer-events: none;
+    width: 320px; max-height: 300px;
+    background: #fff; border-radius: var(--radius);
+    box-shadow: 0 10px 40px rgba(0,0,0,.2);
+    display: flex; flex-direction: column;
+    overflow: hidden;
 }
 .word-popup::after {
     content: ''; position: absolute; top: 100%; left: 50%;
     transform: translateX(-50%);
-    border: 6px solid transparent; border-top-color: var(--green-700);
+    border: 8px solid transparent; border-top-color: #fff;
 }
-.word-popup-text { word-break: break-word; }
+.wp-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; border-bottom: 1px solid var(--gray-200);
+    flex-shrink: 0;
+}
+.wp-word {
+    font-size: .85rem; font-weight: 600; color: var(--green-700);
+}
+.wp-close {
+    width: 28px; height: 28px; border: none; border-radius: 50%;
+    background: var(--gray-100); color: var(--gray-500); font-size: 1.2rem;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.wp-close:hover { background: var(--gray-200); color: var(--gray-600); }
+.wp-body {
+    padding: 12px 14px; font-size: .85rem; line-height: 1.7;
+    color: var(--gray-700); overflow-y: auto; flex: 1; min-height: 50px;
+}
+.wp-actions { padding: 8px 14px; border-top: 1px solid var(--gray-100); flex-shrink: 0; }
+.wp-followup-btn {
+    padding: 5px 14px; border: 1px solid var(--green-400); border-radius: 14px;
+    background: #fff; color: var(--green-600); font-size: .78rem; cursor: pointer;
+    font-family: inherit; transition: all .15s;
+}
+.wp-followup-btn:hover { background: var(--green-50); }
+.wp-input-row {
+    display: flex; gap: 6px; padding: 8px 14px 12px;
+    border-top: 1px solid var(--gray-100); flex-shrink: 0;
+}
+.wp-input {
+    flex: 1; padding: 6px 10px; border: 1px solid var(--gray-200);
+    border-radius: 14px; font-size: .8rem; font-family: inherit; outline: none;
+}
+.wp-input:focus { border-color: var(--green-400); }
+.wp-send-btn {
+    padding: 6px 12px; border: none; border-radius: 14px;
+    background: var(--green-500); color: #fff; font-size: .78rem;
+    cursor: pointer; font-family: inherit; flex-shrink: 0;
+}
+.wp-send-btn:hover { background: var(--green-600); }
 
-@keyframes popIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+/* 多词模式浮动提示 */
+.mw-indicator {
+    position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+    background: var(--green-700); color: #fff; padding: 8px 18px;
+    border-radius: 20px; font-size: .82rem; z-index: 600;
+    box-shadow: 0 4px 16px rgba(0,0,0,.2);
+    display: flex; align-items: center; gap: 8px;
+}
+.mw-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #4ade80; animation: pulse 1s infinite;
+}
+.mw-indicator kbd {
+    background: rgba(255,255,255,.2); padding: 1px 6px;
+    border-radius: 3px; font-size: .75rem; font-family: inherit;
+}
+.mw-indicator a { color: #bbf7d0; text-decoration: underline; cursor: pointer; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+
+/* Shift多词高亮 */
+.hl-word {
+    background: #bbf7d0; color: var(--green-800);
+    border-radius: 2px; padding: 1px 0;
+}
 
 /* ========== 响应式 ========== */
 @media (max-width: 768px) {

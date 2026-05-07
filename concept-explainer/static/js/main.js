@@ -504,51 +504,250 @@
         return div.innerHTML;
     }
 
-    // ======== 划词解释 ========
+    // ======== 划词解释弹窗（可拖拽 + Ctrl多选） ========
     const wordPopup = document.getElementById('wordPopup');
-    const wordPopupText = document.getElementById('wordPopupText');
+    const wpWord = document.getElementById('wpWord');
+    const wpBody = document.getElementById('wpBody');
+    const wpClose = document.getElementById('wpClose');
+    const wpFollowupBtn = document.getElementById('wpFollowupBtn');
+    const wpInputRow = document.getElementById('wpInputRow');
+    const wpInput = document.getElementById('wpInput');
+    const wpSendBtn = document.getElementById('wpSendBtn');
     let explainTimer = null;
+    let currentWord = '';
+    let currentExplanation = '';
+    let ctrlWords = [];       // Ctrl多选累积的词
+    let isDragging = false;
+    let dragStartX = 0, dragStartY = 0, popupStartX = 0, popupStartY = 0;
 
-    document.addEventListener('mouseup', (e) => {
-        clearTimeout(explainTimer);
-        // 延迟执行，等选区稳定
-        explainTimer = setTimeout(() => handleSelection(e), 200);
+    // ====== 弹窗拖拽 ======
+    const wpHeader = wordPopup.querySelector('.wp-header');
+    wpHeader.addEventListener('mousedown', (e) => {
+        if (e.target === wpClose) return; // 不拦截关闭按钮
+        isDragging = true;
+        const rect = wordPopup.getBoundingClientRect();
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+        popupStartX = rect.left;
+        popupStartY = rect.top;
+        wordPopup.style.transform = 'none'; // 拖拽时去掉 transform
+        wordPopup.style.left = popupStartX + 'px';
+        wordPopup.style.top = popupStartY + 'px';
+        e.preventDefault();
     });
 
-    document.addEventListener('mousedown', (e) => {
-        if (!wordPopup.contains(e.target)) {
-            wordPopup.style.display = 'none';
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        wordPopup.style.left = (popupStartX + e.clientX - dragStartX) + 'px';
+        wordPopup.style.top = (popupStartY + e.clientY - dragStartY) + 'px';
+    });
+
+    document.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
+
+    // ====== 多词模式：Shift 切换 + 空格确认 ======
+    let multiWordMode = false;
+    let confirmedWords = [];
+    let highlightSpans = [];
+
+    // Shift 切换模式 / Esc 取消
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && multiWordMode) {
+            cancelMultiWordMode();
+            return;
+        }
+        if (e.key !== 'Shift') return;
+        // 防止在输入框中触发
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        e.preventDefault();
+
+        if (!multiWordMode) {
+            // 进入模式
+            multiWordMode = true;
+            confirmedWords = [];
+            showModeIndicator();
+        } else {
+            // 退出模式 → 批量解释
+            exitMultiWordMode();
         }
     });
 
-    async function handleSelection(e) {
+    // 空格确认选词
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== ' ' || !multiWordMode) return;
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        e.preventDefault();
+
         const sel = window.getSelection();
         const text = (sel?.toString() || '').trim();
-        if (!text || text.length > 50) {
-            wordPopup.style.display = 'none';
-            return;
-        }
+        if (!text || text.length > 50) return;
 
-        // 确保选区在消息区域或建议区
+        // 确保选区在消息/欢迎区
         const anchor = sel.anchorNode;
         if (!anchor) return;
-        const inMessages = messagesEl.contains(anchor);
-        const inWelcome = welcomeEl && welcomeEl.contains(anchor);
-        if (!inMessages && !inWelcome) {
-            wordPopup.style.display = 'none';
-            return;
+        if (!messagesEl.contains(anchor) && !(welcomeEl && welcomeEl.contains(anchor))) return;
+
+        // 去重加入
+        if (!confirmedWords.includes(text)) {
+            confirmedWords.push(text);
+            // 高亮当前选区
+            try {
+                const range = sel.getRangeAt(0);
+                highlightRange(range);
+            } catch (e) { /* ignore */ }
+        }
+        sel.removeAllRanges();
+        updateModeCount();
+    });
+
+    function showModeIndicator() {
+        let el = document.getElementById('multiWordIndicator');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'multiWordIndicator';
+            el.className = 'mw-indicator';
+            document.body.appendChild(el);
+        }
+        el.innerHTML = '<span class="mw-dot"></span>多词模式 · 选词后按<kbd>空格</kbd>确认 · 再按<kbd>Shift</kbd>结束 · <a href="#" id="mwCancel">取消</a>';
+        el.style.display = 'block';
+        document.getElementById('mwCancel').addEventListener('click', (ev) => {
+            ev.preventDefault();
+            cancelMultiWordMode();
+        });
+    }
+
+    function updateModeCount() {
+        const el = document.getElementById('multiWordIndicator');
+        if (el) {
+            el.innerHTML = `<span class="mw-dot"></span>已选 <b>${confirmedWords.length}</b> 个词 · 按<kbd>空格</kbd>继续 · 按<kbd>Shift</kbd>结束 · <a href="#" id="mwCancel">取消</a>`;
+            document.getElementById('mwCancel').addEventListener('click', (ev) => {
+                ev.preventDefault();
+                cancelMultiWordMode();
+            });
+        }
+    }
+
+    function hideModeIndicator() {
+        const el = document.getElementById('multiWordIndicator');
+        if (el) el.style.display = 'none';
+    }
+
+    function cancelMultiWordMode() {
+        multiWordMode = false;
+        confirmedWords = [];
+        clearHighlights();
+        hideModeIndicator();
+    }
+
+    function exitMultiWordMode() {
+        multiWordMode = false;
+        hideModeIndicator();
+        if (confirmedWords.length >= 1) {
+            showMultiWordPopup();
+        } else {
+            clearHighlights();
+        }
+    }
+
+    // ====== 高亮管理 ======
+    function highlightRange(range) {
+        try {
+            const span = document.createElement('mark');
+            span.className = 'hl-word';
+            range.surroundContents(span);
+            highlightSpans.push(span);
+        } catch (e) { /* 跨节点等情况，忽略 */ }
+    }
+
+    function clearHighlights() {
+        highlightSpans.forEach(span => {
+            const parent = span.parentNode;
+            if (parent) {
+                while (span.firstChild) parent.insertBefore(span.firstChild, span);
+                parent.removeChild(span);
+                parent.normalize();
+            }
+        });
+        highlightSpans = [];
+    }
+
+    // ====== 选区检测（普通拖选，单次解释） ======
+    document.addEventListener('mouseup', () => {
+        if (multiWordMode) return; // 多词模式下由空格处理
+        clearTimeout(explainTimer);
+        explainTimer = setTimeout(handleSelection, 200);
+    });
+
+    // 记录弹窗内点击
+    let clickedInsidePopup = false;
+    wordPopup.addEventListener('mousedown', (e) => {
+        if (e.target !== wpClose && e.target.parentElement !== wpHeader) {
+            clickedInsidePopup = true;
+        }
+    });
+
+    // 点击弹窗外关闭（多词模式下不触发）
+    document.addEventListener('mousedown', (e) => {
+        if (multiWordMode) return;
+        if (!wordPopup.contains(e.target)) {
+            hidePopup();
+        }
+    });
+
+    // 关闭按钮
+    wpClose.addEventListener('click', (e) => {
+        e.stopPropagation();
+        hidePopup();
+    });
+
+    // 追问按钮
+    wpFollowupBtn.addEventListener('click', () => {
+        wpInputRow.style.display = 'flex';
+        wpInput.value = '';
+        wpInput.focus();
+    });
+
+    // 发送追问
+    wpSendBtn.addEventListener('click', sendFollowup);
+    wpInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') sendFollowup();
+    });
+
+    function hidePopup() {
+        wordPopup.style.display = 'none';
+        wordPopup.style.transform = '';
+        wpInputRow.style.display = 'none';
+        currentWord = '';
+        currentExplanation = '';
+        confirmedWords = [];
+        clearHighlights();
+        window.getSelection().removeAllRanges();
+    }
+
+    async function handleSelection() {
+        if (clickedInsidePopup) { clickedInsidePopup = false; return; }
+
+        const sel = window.getSelection();
+        const text = (sel?.toString() || '').trim();
+
+        if (!text || text.length > 50) { hidePopup(); return; }
+
+        const anchor = sel.anchorNode;
+        if (!anchor) return;
+        if (!messagesEl.contains(anchor) && !(welcomeEl && welcomeEl.contains(anchor))) {
+            hidePopup(); return;
         }
 
-        // 获取选区位置
         const range = sel.getRangeAt(0);
         const rect = range.getBoundingClientRect();
 
-        // 定位气泡在选区正上方（position:fixed 相对于视口）
-        wordPopup.style.left = (rect.left + rect.width / 2) + 'px';
-        wordPopup.style.top = (rect.top - 8) + 'px';
-        wordPopup.style.transform = 'translate(-50%, -100%)';
-        wordPopup.style.display = 'block';
-        wordPopupText.textContent = '查询中...';
+        positionPopup(rect);
+        wordPopup.style.display = 'flex';
+        wpInputRow.style.display = 'none';
+        wpWord.textContent = text;
+        wpBody.textContent = '查询中...';
+        currentWord = text;
 
         try {
             const resp = await fetch('/api/quick-explain', {
@@ -558,12 +757,90 @@
             });
             const data = await resp.json();
             if (data.success) {
-                wordPopupText.textContent = data.explanation;
+                currentExplanation = data.explanation;
+                wpBody.textContent = currentExplanation;
             } else {
-                wordPopup.style.display = 'none';
+                hidePopup();
             }
         } catch (err) {
-            wordPopup.style.display = 'none';
+            hidePopup();
+        }
+    }
+
+    function positionPopup(rect) {
+        const popupH = 300;
+        if (rect.top > popupH + 20) {
+            wordPopup.style.top = (rect.top - 12) + 'px';
+            wordPopup.style.transform = 'translate(-50%, -100%)';
+        } else {
+            wordPopup.style.top = (rect.bottom + 12) + 'px';
+            wordPopup.style.transform = 'translate(-50%, 0)';
+        }
+        wordPopup.style.left = (rect.left + rect.width / 2) + 'px';
+    }
+
+    async function showMultiWordPopup() {
+        if (confirmedWords.length === 0) return;
+
+        // 用第一个高亮词的位置定位
+        let rect = null;
+        if (highlightSpans.length > 0) {
+            rect = highlightSpans[0].getBoundingClientRect();
+        } else {
+            rect = { top: 200, bottom: 220, left: 400, width: 100 };
+        }
+
+        positionPopup(rect);
+        wordPopup.style.display = 'flex';
+        wpInputRow.style.display = 'none';
+        wpWord.textContent = confirmedWords.join('、');
+        wpBody.textContent = '查询中...';
+        currentWord = confirmedWords.join('、');
+
+        // 保存词列表，解释完后清理
+        const wordsToExplain = [...confirmedWords];
+        clearHighlights();
+        confirmedWords = [];
+
+        try {
+            const resp = await fetch('/api/quick-explain', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ words: wordsToExplain }),
+            });
+            const data = await resp.json();
+            if (data.success) {
+                currentExplanation = data.explanation;
+                wpBody.textContent = currentExplanation;
+            }
+        } catch (err) {
+            wpBody.textContent = '请求失败';
+        }
+    }
+
+    async function sendFollowup() {
+        const question = wpInput.value.trim();
+        if (!question || !currentWord) return;
+        wpInput.value = '';
+        wpBody.textContent = '思考中...';
+
+        try {
+            const resp = await fetch('/api/quick-explain', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    word: currentWord,
+                    question: question,
+                    context: currentExplanation,
+                }),
+            });
+            const data = await resp.json();
+            if (data.success) {
+                currentExplanation = data.explanation;
+                wpBody.textContent = currentExplanation;
+            }
+        } catch (err) {
+            wpBody.textContent = '请求失败';
         }
     }
 })();

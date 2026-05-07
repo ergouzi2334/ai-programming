@@ -300,19 +300,48 @@ def chat():
         return jsonify({'success': False, 'error': f'API 请求失败：{str(e)}'}), 500
 
 
-# ======== 划词快速解释 ========
-QUICK_PROMPT = """用一句话（30字以内）解释用户选中的词，通俗易懂。只输出解释本身，不要任何前缀后缀。"""
+# ======== 划词快速解释（含追问） ========
+QUICK_PROMPT = """用1-2句话（60字以内）解释用户选中的词，通俗易懂。只输出解释本身，不要前缀后缀。"""
+
+MULTI_PROMPT = """用简洁的语言逐个解释以下名词（每个30字以内），格式为"名词：解释"。通俗易懂。只输出解释本身。"""
+
+FOLLOWUP_PROMPT = """用户针对一个概念提出了追问。请针对追问内容简明回答（100字以内），通俗易懂。只输出回答本身，不要前缀后缀。
+
+概念：{word}
+当前解释：{context}"""
 
 
 @app.route('/api/quick-explain', methods=['POST'])
 def quick_explain():
     data = request.get_json()
+    words = data.get('words', [])  # 多词模式
     word = normalize_concept(data.get('word', ''))
-    if not word or len(word) > 100:
+    if not word and not words:
+        return jsonify({'success': False}), 400
+    if word and len(word) > 100:
         return jsonify({'success': False}), 400
 
     if not DEEPSEEK_API_KEY:
         return jsonify({'success': False}), 500
+
+    question = data.get('question', '').strip()
+    context = data.get('context', '').strip()
+
+    if question:
+        # 追问模式
+        system_msg = FOLLOWUP_PROMPT.format(word=word, context=context)
+        user_msg = question
+        max_tok = 250
+    elif words:
+        # 多词解释
+        system_msg = MULTI_PROMPT
+        user_msg = '、'.join(words)
+        max_tok = 300
+    else:
+        # 单次解释
+        system_msg = QUICK_PROMPT
+        user_msg = word
+        max_tok = 150
 
     try:
         resp = requests.post(
@@ -324,11 +353,11 @@ def quick_explain():
             json={
                 'model': 'deepseek-chat',
                 'messages': [
-                    {'role': 'system', 'content': QUICK_PROMPT},
-                    {'role': 'user', 'content': word},
+                    {'role': 'system', 'content': system_msg},
+                    {'role': 'user', 'content': user_msg},
                 ],
                 'temperature': 0.3,
-                'max_tokens': 80,
+                'max_tokens': max_tok,
             },
             timeout=15,
         )

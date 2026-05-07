@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学生周报生成器</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+  .container {
+    background: #fff;
+    border-radius: 16px;
+    padding: 36px;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  }
+  h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 28px;
+    font-size: 24px;
+  }
+  .form-group {
+    margin-bottom: 18px;
+  }
+  label {
+    display: block;
+    margin-bottom: 6px;
+    color: #555;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  input:focus {
+    border-color: #667eea;
+  }
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+  }
+  button {
+    flex: 1;
+    padding: 11px 0;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  button:active { transform: scale(0.97); }
+  .btn-gen {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+  }
+  .btn-copy {
+    background: #f0f0f0;
+    color: #333;
+  }
+  .btn-copy:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .result-box {
+    margin-top: 24px;
+    padding: 18px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+    font-size: 14px;
+    line-height: 1.8;
+    color: #333;
+    min-height: 60px;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .result-box:empty::before {
+    content: "生成的周报将显示在这里...";
+    color: #aaa;
+  }
+  .toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 20px;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>📋 学生周报生成器</h1>
+
+  <div class="form-group">
+    <label>学生姓名</label>
+    <input type="text" id="studentName" placeholder="请输入姓名" maxlength="20">
+  </div>
+
+  <div class="form-group">
+    <label>考勤天数（本周）</label>
+    <input type="number" id="attendance" placeholder="0-7" min="0" max="7">
+  </div>
+
+  <div class="form-group">
+    <label>作业完成数（本周）</label>
+    <input type="number" id="homework" placeholder="请输入完成数量" min="0">
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-gen" onclick="generateReport()">生成周报</button>
+    <button class="btn-copy" id="btnCopy" onclick="copyReport()" disabled>一键复制</button>
+  </div>
+
+  <div class="result-box" id="result"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function generateReport() {
+  const name = document.getElementById('studentName').value.trim() || '未填写';
+  const attendance = parseInt(document.getElementById('attendance').value) || 0;
+  const homework = parseInt(document.getElementById('homework').value) || 0;
+
+  let comment;
+  if (attendance === 7 && homework >= 10) {
+    comment = '全勤且作业完成量突出，表现优异，继续保持！';
+  } else if (attendance >= 6 && homework >= 8) {
+    comment = '出勤和作业完成情况良好，值得表扬。';
+  } else if (attendance >= 5 && homework >= 5) {
+    comment = '整体表现不错，仍有提升空间。';
+  } else if (attendance >= 3 || homework >= 3) {
+    comment = '表现一般，需加强出勤和作业完成。';
+  } else {
+    comment = '出勤和作业均偏低，需重点关注并改进。';
+  }
+
+  const report = `【学生周报】${name}同学本周表现：出勤${attendance}天，完成作业${homework}份。${comment}`;
+
+  document.getElementById('result').textContent = report;
+  document.getElementById('btnCopy').disabled = false;
+}
+
+function copyReport() {
+  const text = document.getElementById('result').textContent;
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('✅ 已复制到剪贴板');
+  });
+}
+
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+// 回车键触发生成
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.activeElement?.tagName === 'INPUT') {
+    generateReport();
+  }
+});
+</script>
+</body>
+</html>

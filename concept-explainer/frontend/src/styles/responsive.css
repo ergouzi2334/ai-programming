@@ -1,0 +1,18 @@
+@media (max-width: 768px) {
+    .kb-sidebar { width: 100%; right: -100%; }
+    .main-content.shifted { margin-right: 0; }
+    .header-inner { flex-wrap: wrap; gap: 8px; }
+    .btn-kb-toggle { font-size: .78rem; padding: 6px 12px; }
+    .btn-kb-toggle span { display: none; }
+}
+
+@media (max-width: 640px) {
+    .header { padding: 14px 0; }
+    .logo { font-size: 1.15rem; }
+    .subtitle { font-size: .75rem; }
+    .bubble { max-width: 92%; padding: 12px 14px; }
+    .chat-area { padding: 16px 0 130px; }
+    .welcome { padding: 24px 10px; }
+    .chip { font-size: .8rem; padding: 6px 12px; }
+    .ai-bubble pre { font-size: .78rem; padding: 12px; }
+}

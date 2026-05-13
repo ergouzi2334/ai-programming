@@ -1,0 +1,57 @@
+/* 分类选择弹窗 */
+.cat-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0, 0, 0, .35);
+    z-index: 400; display: flex; align-items: center; justify-content: center;
+    animation: fadeIn .2s;
+}
+.cat-modal {
+    background: #fff; border-radius: var(--radius); padding: 24px;
+    width: 90%; max-width: 380px; box-shadow: 0 20px 60px rgba(0, 0, 0, .2);
+    animation: slideUp .25s;
+}
+.cat-modal-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 4px; }
+.cat-modal-concept {
+    font-size: .85rem; color: var(--gray-400); margin-bottom: 16px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cat-modal-list {
+    display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px;
+    max-height: 200px; overflow-y: auto;
+}
+.cat-option {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; border: 2px solid var(--gray-200); border-radius: var(--radius-sm);
+    cursor: pointer; transition: all .15s; font-size: .9rem;
+}
+.cat-option:hover { border-color: var(--green-400); background: var(--green-50); }
+.cat-option.selected { border-color: var(--green-500); background: var(--green-50); color: var(--green-700); font-weight: 600; }
+.cat-option-del {
+    font-size: .75rem; color: var(--gray-400); background: none; border: none;
+    cursor: pointer; padding: 2px 6px; border-radius: 4px; opacity: 0;
+    transition: opacity .15s;
+}
+.cat-option:hover .cat-option-del { opacity: 1; }
+.cat-option-del:hover { background: #fef2f2; color: #dc2626; }
+
+.cat-modal-new {
+    display: flex; gap: 8px; margin-bottom: 16px;
+}
+.cat-modal-new input {
+    flex: 1; padding: 8px 12px; border: 2px solid var(--gray-200);
+    border-radius: var(--radius-sm); font-size: .88rem; font-family: inherit; outline: none;
+}
+.cat-modal-new input:focus { border-color: var(--green-400); }
+
+.cat-modal-actions {
+    display: flex; gap: 8px; justify-content: flex-end;
+}
+
+.btn-outline {
+    padding: 8px 16px; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);
+    background: #fff; color: var(--gray-600); cursor: pointer; font-size: .85rem;
+    font-family: inherit; transition: all .15s;
+}
+.btn-outline:hover { border-color: var(--gray-400); background: var(--gray-50); }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }

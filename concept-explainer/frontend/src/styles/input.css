@@ -1,0 +1,60 @@
+/* 输入栏 */
+.input-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
+    border-top: 1px solid var(--gray-200); padding: 12px 0;
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, .06); z-index: 100;
+}
+.input-container { display: flex; align-items: flex-end; gap: 10px; }
+.default-cat {
+    display: flex; align-items: center; gap: 4px;
+    padding-bottom: 10px; flex-shrink: 0;
+}
+.default-cat-label {
+    font-size: .75rem; color: var(--gray-400); white-space: nowrap;
+}
+.default-cat-select {
+    padding: 4px 8px; border: 1px solid var(--gray-200);
+    border-radius: 14px; font-size: .78rem; font-family: inherit;
+    color: var(--gray-700); background: #fff; cursor: pointer; outline: none;
+    max-width: 100px;
+}
+.default-cat-select:focus { border-color: var(--green-400); }
+.input-container textarea {
+    flex: 1; border: 2px solid var(--gray-200); border-radius: var(--radius-sm);
+    padding: 10px 14px; font-size: .92rem; font-family: inherit; resize: none;
+    outline: none; transition: border-color .2s; max-height: 120px; line-height: 1.5;
+}
+.input-container textarea:focus { border-color: var(--green-400); }
+
+.btn-send {
+    width: 44px; height: 44px; border: none; border-radius: 50%;
+    background: var(--green-500); color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s; flex-shrink: 0;
+}
+.btn-send:hover { background: var(--green-600); transform: scale(1.05); }
+.btn-send:disabled { background: var(--gray-300); cursor: not-allowed; transform: none; }
+
+.btn-small { padding: 6px 12px; font-size: .78rem; border-radius: var(--radius-sm); border: none; cursor: pointer; font-family: inherit; }
+.btn-primary { background: var(--green-500); color: #fff; }
+.btn-primary:hover { background: var(--green-600); }
+
+/* 加载指示器 */
+.loading-toast {
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+    background: #fff; border: 1px solid var(--gray-200); border-radius: 20px;
+    padding: 8px 18px; display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .1); z-index: 200;
+    font-size: .85rem; color: var(--gray-600);
+}
+.typing-dots { display: flex; gap: 4px; }
+.typing-dots span {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--green-400);
+    animation: bounce 1.2s infinite;
+}
+.typing-dots span:nth-child(2) { animation-delay: .2s; }
+.typing-dots span:nth-child(3) { animation-delay: .4s; }
+@keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-6px); }
+}
